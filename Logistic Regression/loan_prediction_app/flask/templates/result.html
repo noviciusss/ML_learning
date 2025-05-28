@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Prediction Result - Loan Predictor{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        {% if error %}
+        <div class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Error:</strong> {{ error }}
+        </div>
+        {% else %}
+        <div class="card shadow">
+            <div class="card-header {% if result.prediction == 1 %}bg-success{% else %}bg-danger{% endif %} text-white">
+                <h3 class="mb-0">
+                    {% if result.prediction == 1 %}
+                        <i class="fas fa-check-circle"></i> Loan Approved!
+                    {% else %}
+                        <i class="fas fa-times-circle"></i> Loan Rejected
+                    {% endif %}
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h4>Loan Status:</h4>
+                        <div class="alert {% if result.prediction == 1 %}alert-success{% else %}alert-danger{% endif %}">
+                            <h2 class="mb-0">{{ result.loan_status }}</h2>
+                        </div>
+                    </div>
+                    
+                    {% if result.prob_approved %}
+                    <div class="col-md-4">
+                        <h4>Approval Probability:</h4>
+                        <div class="progress mb-2" style="height: 30px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ (result.prob_approved * 100)|round(2) }}%">
+                                {{ (result.prob_approved * 100)|round(2) }}%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <h4>Rejection Probability:</h4>
+                        <div class="progress mb-2" style="height: 30px;">
+                            <div class="progress-bar bg-danger" role="progressbar" 
+                                 style="width: {{ (result.prob_rejected * 100)|round(2) }}%">
+                                {{ (result.prob_rejected * 100)|round(2) }}%
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <h5><i class="fas fa-list"></i> Input Information Summary:</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th class="text-black">Personal Information</th>
+                                        <th class="text-black">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><i class="fas fa-users"></i> Dependents</td>
+                                        <td>{{ result.input_features.no_of_dependents }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fas fa-graduation-cap"></i> Education</td>
+                                        <td>{% if result.input_features.education == 1 %}Graduate{% else %}Not Graduate{% endif %}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fas fa-briefcase"></i> Self Employed</td>
+                                        <td>{% if result.input_features.self_employed == 1 %}Yes{% else %}No{% endif %}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fas fa-money-bill-wave"></i> Annual Income</td>
+                                        <td>₹{{ "{:,}".format(result.input_features.income_annum|int) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fas fa-star"></i> CIBIL Score</td>
+                                        <td>{{ result.input_features.cibil_score }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th class="text-black">Loan & Asset Information</th>
+                                        <th class="text-black">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><i class="fas fa-hand-holding-usd"></i> Loan Amount</td>
+                                        <td>₹{{ "{:,}".format(result.input_features.loan_amount|int) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fas fa-calendar-alt"></i> Loan Term</td>
+                                        <td>{{ result.input_features.loan_term }} years</td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fas fa-home"></i> Residential Assets</td>
+                                        <td>₹{{ "{:,}".format(result.input_features.residential_assets_value|int) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fas fa-building"></i> Commercial Assets</td>
+                                        <td>₹{{ "{:,}".format(result.input_features.commercial_assets_value|int) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fas fa-gem"></i> Luxury Assets</td>
+                                        <td>₹{{ "{:,}".format(result.input_features.luxury_assets_value|int) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fas fa-university"></i> Bank Assets</td>
+                                        <td>₹{{ "{:,}".format(result.input_features.bank_asset_value|int) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Risk Analysis -->
+                <hr>
+                <h5><i class="fas fa-chart-pie"></i> Risk Analysis:</h5>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <h6>Credit Score Risk : based on cibil scores</h6>
+                                {% set cibil = result.input_features.cibil_score %}
+                                {% if cibil >= 750 %}
+                                    <span class="badge bg-success">Low Risk</span>
+                                {% elif cibil >= 650 %}
+                                    <span class="badge bg-warning">Medium Risk</span>
+                                {% else %}
+                                    <span class="badge bg-danger">High Risk</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <h6>Loan-to-Income Ratio</h6>
+                                {% set ratio = (result.input_features.loan_amount / result.input_features.income_annum * 100) %}
+                                <span class="badge {% if ratio <= 300 %}bg-success{% elif ratio <= 500 %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ ratio|round(1) }}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <h6>Total Assets</h6>
+                                {% set total_assets = result.input_features.residential_assets_value + result.input_features.commercial_assets_value + result.input_features.luxury_assets_value + result.input_features.bank_asset_value %}
+                                <span class="badge bg-info">₹{{ "{:,}".format(total_assets|int) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="text-center mt-3">
+            <a href="{{ url_for('home') }}" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Make Another Prediction
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
